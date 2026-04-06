@@ -80,14 +80,13 @@ async function fetchData() {
         
         updateProgress(30);
         
-        // Fetch entries from Nightscout API
-        const apiUrl = `${baseUrl}/api/v1/entries.json?count=${count}`;
+        // Fetch entries from Nightscout API using token query param (avoids CORS issues)
+        const apiUrl = `${baseUrl}/api/v1/entries.json?count=${count}&token=${apiSecretHash}`;
         
         const response = await fetch(apiUrl, {
             method: 'GET',
             headers: {
-                'Accept': 'application/json',
-                'api-secret': apiSecretHash
+                'Accept': 'application/json'
             }
         });
         
