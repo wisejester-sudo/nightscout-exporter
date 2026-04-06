@@ -2,6 +2,7 @@
 // Free tool by Mieru Health
 
 let fetchedData = [];
+let fetchedTreatments = [];
 
 // DOM Elements
 const nightscoutUrlInput = document.getElementById('nightscout-url');
@@ -47,6 +48,7 @@ async function fetchData() {
     const url = nightscoutUrlInput.value.trim();
     const apiSecret = apiSecretInput.value.trim();
     const count = parseInt(entryCountInput.value) || 100;
+    const includeTreatments = document.getElementById('include-treatments')?.checked || false;
     
     // Validation
     if (!url) {
@@ -78,7 +80,7 @@ async function fetchData() {
         // Generate SHA1 hash of API secret
         const apiSecretHash = await sha1(apiSecret);
         
-        updateProgress(30);
+        updateProgress(20);
         
         // Fetch entries from Nightscout API using token query param (avoids CORS issues)
         const apiUrl = `${baseUrl}/api/v1/entries.json?count=${count}&token=${apiSecretHash}`;
@@ -89,6 +91,31 @@ async function fetchData() {
                 'Accept': 'application/json'
             }
         });
+        
+        updateProgress(50);
+        
+        // Fetch treatments if checkbox is checked
+        if (includeTreatments) {
+            showStatus('Fetching treatments (insulin, carbs, exercise)...', 'loading');
+            const treatmentsUrl = `${baseUrl}/api/v1/treatments.json?count=${count}&token=${apiSecretHash}`;
+            
+            const treatmentsResponse = await fetch(treatmentsUrl, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (treatmentsResponse.ok) {
+                fetchedTreatments = await treatmentsResponse.json();
+                console.log(`Fetched ${fetchedTreatments.length} treatments`);
+            } else {
+                console.warn('Could not fetch treatments');
+                fetchedTreatments = [];
+            }
+        } else {
+            fetchedTreatments = [];
+        }
         
         updateProgress(70);
         
@@ -134,29 +161,49 @@ async function fetchData() {
 function displayPreview(data) {
     previewSection.classList.remove('hidden');
     
-    // Show first 10 entries
-    const previewData = data.slice(0, 10);
+    let html = '';
     
-    let html = '<table>';
-    html += '<thead><tr><th>Date</th><th>Time</th><th>Glucose (mg/dL)</th><th>Device</th></tr></thead>';
-    html += '<tbody>';
-    
-    previewData.forEach(entry => {
-        const date = new Date(entry.dateString || entry.date);
-        const dateStr = date.toLocaleDateString();
-        const timeStr = date.toLocaleTimeString();
-        const glucose = entry.sgv || entry.mbg || 'N/A';
-        const device = entry.device || 'Unknown';
+    // Show CGM entries preview
+    if (data.length > 0) {
+        html += '<h4>CGM Entries</h4>';
+        html += '<table>';
+        html += '<thead><tr><th>Date</th><th>Time</th><th>Glucose (mg/dL)</th><th>Device</th></tr></thead>';
+        html += '<tbody>';
         
-        html += `<tr>`;
-        html += `<td>${dateStr}</td>`;
-        html += `<td>${timeStr}</td>`;
-        html += `<td>${glucose}</td>`;
-        html += `<td>${device}</td>`;
-        html += `</tr>`;
-    });
+        data.slice(0, 5).forEach(entry => {
+            const date = new Date(entry.dateString || entry.date);
+            const dateStr = date.toLocaleDateString();
+            const timeStr = date.toLocaleTimeString();
+            const glucose = entry.sgv || entry.mbg || 'N/A';
+            const device = entry.device || 'Unknown';
+            
+            html += `<tr><td>${dateStr}</td><td>${timeStr}</td><td>${glucose}</td><td>${device}</td></tr>`;
+        });
+        
+        html += '</tbody></table>';
+    }
     
-    html += '</tbody></table>';
+    // Show treatments preview
+    if (fetchedTreatments.length > 0) {
+        html += '<h4>Treatments (Insulin, Carbs, Exercise)</h4>';
+        html += '<table>';
+        html += '<thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Insulin (U)</th><th>Carbs (g)</th></tr></thead>';
+        html += '<tbody>';
+        
+        fetchedTreatments.slice(0, 5).forEach(treatment => {
+            const date = new Date(treatment.dateString || treatment.created_at || treatment.timestamp);
+            const dateStr = date.toLocaleDateString();
+            const timeStr = date.toLocaleTimeString();
+            const type = treatment.eventType || 'Note';
+            const insulin = treatment.insulin || '-';
+            const carbs = treatment.carbs || '-';
+            
+            html += `<tr><td>${dateStr}</td><td>${timeStr}</td><td>${type}</td><td>${insulin}</td><td>${carbs}</td></tr>`;
+        });
+        
+        html += '</tbody></table>';
+    }
+    
     dataPreview.innerHTML = html;
 }
 
@@ -167,29 +214,52 @@ function exportCSV() {
         return;
     }
     
-    // CSV Header
-    const headers = ['Date', 'Time', 'Glucose (mg/dL)', 'Type', 'Device', 'Trend', 'ID'];
+    let csv = '';
     
-    // CSV Rows
-    const rows = fetchedData.map(entry => {
-        const date = new Date(entry.dateString || entry.date);
-        return [
-            date.toLocaleDateString(),
-            date.toLocaleTimeString(),
-            entry.sgv || entry.mbg || '',
-            entry.type || '',
-            entry.device || '',
-            entry.trend || '',
-            entry._id || ''
-        ].map(field => `"${field}"`).join(',');
-    });
+    // Entries section
+    if (fetchedData.length > 0) {
+        csv += '# CGM ENTRIES\n';
+        csv += 'Date,Time,Glucose (mg/dL),Type,Device,Trend,ID\n';
+        
+        fetchedData.forEach(entry => {
+            const date = new Date(entry.dateString || entry.date);
+            const row = [
+                date.toLocaleDateString(),
+                date.toLocaleTimeString(),
+                entry.sgv || entry.mbg || '',
+                entry.type || '',
+                entry.device || '',
+                entry.trend || '',
+                entry._id || ''
+            ].map(field => `"${field}"`).join(',');
+            csv += row + '\n';
+        });
+    }
     
-    // Combine
-    const csv = [headers.join(','), ...rows].join('\n');
+    // Treatments section
+    if (fetchedTreatments.length > 0) {
+        csv += '\n# TREATMENTS (Insulin, Carbs, Exercise)\n';
+        csv += 'Date,Time,Event Type,Insulin (U),Carbs (g),Notes,ID\n';
+        
+        fetchedTreatments.forEach(treatment => {
+            const date = new Date(treatment.dateString || treatment.created_at || treatment.timestamp);
+            const row = [
+                date.toLocaleDateString(),
+                date.toLocaleTimeString(),
+                treatment.eventType || '',
+                treatment.insulin || '',
+                treatment.carbs || '',
+                (treatment.notes || '').replace(/"/g, '""'),
+                treatment._id || ''
+            ].map(field => `"${field}"`).join(',');
+            csv += row + '\n';
+        });
+    }
     
     // Download
-    downloadFile(csv, 'nightscout-data.csv', 'text/csv');
-    showStatus('CSV file downloaded!', 'success');
+    const filename = fetchedTreatments.length > 0 ? 'nightscout-data-with-treatments.csv' : 'nightscout-data.csv';
+    downloadFile(csv, filename, 'text/csv');
+    showStatus(`CSV file downloaded! (${fetchedData.length} entries${fetchedTreatments.length > 0 ? ', ' + fetchedTreatments.length + ' treatments' : ''})`, 'success');
 }
 
 // Export to JSON
@@ -199,9 +269,18 @@ function exportJSON() {
         return;
     }
     
-    const json = JSON.stringify(fetchedData, null, 2);
-    downloadFile(json, 'nightscout-data.json', 'application/json');
-    showStatus('JSON file downloaded!', 'success');
+    const exportData = {
+        entries: fetchedData,
+        treatments: fetchedTreatments,
+        exportDate: new Date().toISOString(),
+        totalEntries: fetchedData.length,
+        totalTreatments: fetchedTreatments.length
+    };
+    
+    const filename = fetchedTreatments.length > 0 ? 'nightscout-data-with-treatments.json' : 'nightscout-data.json';
+    const json = JSON.stringify(exportData, null, 2);
+    downloadFile(json, filename, 'application/json');
+    showStatus(`JSON file downloaded! (${fetchedData.length} entries${fetchedTreatments.length > 0 ? ', ' + fetchedTreatments.length + ' treatments' : ''})`, 'success');
 }
 
 // Download file
