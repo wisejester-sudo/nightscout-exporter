@@ -3,81 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nightscout Data Exporter | Free Tool by Mieru Health</title>
+    <title>Nightscout Data Exporter | Mieru Health</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🩸 Nightscout Data Exporter</h1>
-            <p class="subtitle">Export your CGM data to CSV or JSON</p>
-            <p class="byline">Free tool by <a href="https://mieru.health" target="_blank">Mieru Health</a></p>
-        </header>
+    <nav class="nav">
+        <div class="nav-content">
+            <a href="/" class="logo">
+                <div class="logo-icon">M</div>
+                <span class="logo-text">Mieru Health</span>
+            </a>
+        </div>
+    </nav>
 
-        <main>
-            <section class="input-section">
-                <h2>Enter Your Nightscout Details</h2>
-                
-                <div class="form-group">
-                    <label for="nightscout-url">Nightscout URL</label>
-                    <input type="url" id="nightscout-url" placeholder="https://your-nightscout.herokuapp.com" required>
-                    <small>Your Nightscout site URL (e.g., https://username-nightscout.herokuapp.com)</small>
+    <main class="main">
+        <div class="hero">
+            <div class="badge">
+                <span class="badge-dot"></span>
+                Free Tool for Nightscout Users
+            </div>
+            <h1 class="hero-title">Export Your CGM Data</h1>
+            <p class="hero-subtitle">Download your Nightscout data in CSV or JSON format. Simple, secure, and private.</p>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">Connect Your Nightscout</h2>
+            
+            <div class="form-group">
+                <label for="nightscout-url">Nightscout URL</label>
+                <input type="url" id="nightscout-url" placeholder="https://your-site.herokuapp.com" required>
+                <small>Your Nightscout instance URL</small>
+            </div>
+
+            <div class="form-group">
+                <label for="api-secret">API Secret</label>
+                <input type="password" id="api-secret" placeholder="Your API secret" required>
+                <small>Found in Settings → API secret</small>
+            </div>
+
+            <div class="form-group">
+                <label for="entry-count">Number of Entries</label>
+                <input type="number" id="entry-count" value="100" min="1" max="10000">
+                <small>Recent entries to export</small>
+            </div>
+
+            <div class="buttons">
+                <button id="fetch-btn" class="btn-primary">Fetch Data</button>
+                <button id="export-csv-btn" class="btn-secondary" disabled>Export CSV</button>
+                <button id="export-json-btn" class="btn-secondary" disabled>Export JSON</button>
+            </div>
+        </div>
+
+        <div id="status-section" class="status-section hidden">
+            <div id="status-message"></div>
+            <div id="progress-bar" class="progress-bar hidden">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+
+        <div id="preview-section" class="preview-section hidden">
+            <h3>Data Preview</h3>
+            <div id="data-preview"></div>
+            <p class="preview-note">Showing first 10 entries</p>
+        </div>
+
+        <div class="features">
+            <h3>Why Use This Tool?</h3>
+            <div class="features-grid">
+                <div class="feature">
+                    <div class="feature-icon">🔒</div>
+                    <h4>Secure</h4>
+                    <p>Your API secret is hashed and never stored. All processing happens in your browser.</p>
                 </div>
-
-                <div class="form-group">
-                    <label for="api-secret">API Secret</label>
-                    <input type="password" id="api-secret" placeholder="Your API secret" required>
-                    <small>Found in your Nightscout settings (Settings → API secret)</small>
+                <div class="feature">
+                    <div class="feature-icon">📊</div>
+                    <h4>Export Data</h4>
+                    <p>Download your CGM readings in CSV or JSON format for analysis or backup.</p>
                 </div>
-
-                <div class="form-group">
-                    <label for="entry-count">Number of Entries</label>
-                    <input type="number" id="entry-count" value="100" min="1" max="10000">
-                    <small>How many recent entries to export (max 10,000)</small>
+                <div class="feature">
+                    <div class="feature-icon">🎯</div>
+                    <h4>Control Your Data</h4>
+                    <p>You own your health data. Export it anytime, with no restrictions.</p>
                 </div>
+            </div>
+        </div>
 
-                <div class="buttons">
-                    <button id="fetch-btn" class="btn-primary">Fetch Data</button>
-                    <button id="export-csv-btn" class="btn-secondary" disabled>Export CSV</button>
-                    <button id="export-json-btn" class="btn-secondary" disabled>Export JSON</button>
-                </div>
-            </section>
+        <div class="about">
+            <div class="about-content">
+                <h3>About Mieru Health</h3>
+                <p>Mieru Health helps diabetics take control of their CGM data. We're building tools to help you understand, export, and optionally share your glucose data with researchers.</p>
+                <p>Your data. Your choice. Your control.</p>
+                <a href="https://mieru.health" target="_blank" class="btn-link">Learn more about Mieru Health →</a>
+            </div>
+        </div>
+    </main>
 
-            <section id="status-section" class="status-section hidden">
-                <div id="status-message"></div>
-                <div id="progress-bar" class="progress-bar hidden">
-                    <div class="progress-fill"></div>
-                </div>
-            </section>
-
-            <section id="preview-section" class="preview-section hidden">
-                <h2>Data Preview</h2>
-                <div id="data-preview"></div>
-                <p class="preview-note">Showing first 10 entries. Export to see all data.</p>
-            </section>
-
-            <section class="info-section">
-                <h2>About This Tool</h2>
-                <ul>
-                    <li>✅ <strong>Secure:</strong> Your API secret is hashed (SHA1) and never stored</li>
-                    <li>✅ <strong>Private:</strong> All processing happens in your browser</li>
-                    <li>✅ <strong>Free:</strong> No account required, no data sent to servers</li>
-                    <li>✅ <strong>Open Source:</strong> <a href="https://github.com/wisejester-sudo/nightscout-exporter">View code on GitHub</a></li>
-                </ul>
-                
-                <div class="mieru-promo">
-                    <h3>💰 Want to monetize your CGM data?</h3>
-                    <p>Join <a href="https://mieru.health" target="_blank">Mieru Health</a> — a marketplace where diabetics sell their anonymized CGM data to researchers.</p>
-                    <p><strong>Earn $50-300 per dataset</strong> while contributing to diabetes research.</p>
-                    <a href="https://mieru.health" target="_blank" class="btn-cta">Join the Waitlist</a>
-                </div>
-            </section>
-        </main>
-
-        <footer>
-            <p>Made with ❤️ by <a href="https://mieru.health">Mieru Health</a> | <a href="https://github.com/wisejester-sudo/nightscout-exporter">GitHub</a></p>
-        </footer>
-    </div>
+    <footer class="footer">
+        <div class="footer-content">
+            <p>Made by <a href="https://mieru.health">Mieru Health</a> · <a href="https://github.com/wisejester-sudo/nightscout-exporter">View on GitHub</a></p>
+        </div>
+    </footer>
 
     <script src="script.js"></script>
 </body>
